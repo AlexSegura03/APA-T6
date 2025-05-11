@@ -1,3 +1,8 @@
+'''
+    Sexta tarea de APA - Expresiones regulares 
+    Nombre y apellidos: Alex Segura Medina
+'''
+
 import re
 
 class Alumno:

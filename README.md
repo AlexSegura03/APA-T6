@@ -1,6 +1,6 @@
 # Expresiones Regulares
 
-## Nom i cognoms
+## Àlex Segura Medina
 
 ## Tratamiento de ficheros de notas
 
