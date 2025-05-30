@@ -63,3 +63,7 @@ def leeAlumnos(ficAlumnos):
                 print(match['id'])
                 print(match['nom'])
                 print(match['nota'])
+
+
+
+
