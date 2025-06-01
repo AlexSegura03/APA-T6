@@ -1,6 +1,9 @@
 '''
     Sexta tarea de APA - Expresiones regulares 
-    Nombre y apellidos: Alex Segura Medina
+    Nombre y apellidos: Àlex Segura Medina
+
+    Tratamiento de ficheros de notas
+
 '''
 
 import re
@@ -51,19 +54,39 @@ class Alumno:
         return f'{self.numIden}\t{self.nombre}\t{self.media():.1f}'
 
 
-def leeAlumnos(ficAlumnos):
-    reId = r'\s*(?P<id>\d+)'
-    reNom = r'\s+(?P<nom>[^\d]+)'
-    reNota = r'(?P<nota>(\s*[0-9.]+)*)'
-    reAlumnos = re.compile(reId + reNom + reNota)
-    with open(ficAlumnos, 'rt') as fpAlumnos:
-        for linia in fpAlumnos:
-            match = reAlumnos.search(linia)
-            if match is not None:
-                print(match['id'])
-                print(match['nom'])
-                print(match['nota'])
+import re
 
+def leeAlumnos(ficAlumnos):
+    """
+    Lee el fichero de alumnos y devuelve un diccionario de objetos Alumno.
+    La clave es el nombre del alumno y el valor es su objeto Alumno.
+
+    >>> alumnos = leeAlumnos('alumnos.txt')
+    >>> for alumno in alumnos:
+    ...     print(alumnos[alumno])
+    ...
+    171     Blanca Agirrebarrenetse 9.5
+    23      Carles Balcell de Lara 4.9
+    68      David Garcia Fuster     7.0
+    """
+    alumnos = {}
+    patron = re.compile(r'^\s*(\d+)\s+([^\d\n]+?)\s+([\d\s.]+)$')
+
+    with open(ficAlumnos, 'rt', encoding='utf-8') as f:
+        for linea in f:
+            match = patron.match(linea)
+            if match:
+                numIden = int(match.group(1))
+                nombre = match.group(2).strip()
+                notas_str = match.group(3).split()
+                notas = [float(n) for n in notas_str]
+                alumnos[nombre] = Alumno(nombre, numIden, notas)
+
+    return alumnos
+
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod(optionflags=doctest.NORMALIZE_WHITESPACE)
 
 
 

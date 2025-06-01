@@ -1,3 +1,10 @@
+'''
+    Sexta tarea de APA - Expresiones regulares 
+    Nombre y apellidos: Àlex Segura Medina
+
+    Análisis de expresiones horarias
+'''
+
 import re
 
 def normalizaHoras(ficHoras):
@@ -9,48 +16,71 @@ def normalizaHoras(ficHoras):
         h = int(match.group('h'))
         m = match.group('m')
         m = int(m) if m else 0
+        ampm = match.group('ampm')
 
-        if match.group('ampm'):
-            if 'tarde' in match.group('ampm') or 'noche' in match.group('ampm'):
-                if h < 12:
-                    h += 12
-            elif 'mañana' in match.group('ampm') and h == 12:
+        # Detectar errores: minutos mal formateados, horas inválidas
+        if m >= 60 or h >= 24 or (ampm == 'tarde' and h < 12 and h >= 12):
+            return match.group(0)  # dejar sin modificar
+
+        if ampm:
+            if ampm in ['tarde', 'noche'] and h < 12:
+                h += 12
+            elif ampm == 'mañana' and h == 12:
                 h = 0
-
-        # Control de minutos mayores de 59 (corrección simple)
-        if m >= 60:
-            h += m // 60
-            m = m % 60
+            elif ampm == 'noche' and h == 12:
+                h = 0
 
         return f'{h:02d}:{m:02d}'
 
-    def reemplazos_especiales(text):
-        # Casos tipo "4 y media de la tarde"
-        text = re.sub(r'(\b\d{1,2})\s+y\s+media(?:\s+de\s+la\s+(mañana|tarde|noche))?',
-                      lambda m: f'{int(m.group(1)) + (12 if m.group(2) in ("tarde", "noche") and int(m.group(1)) < 12 else 0):02d}:30',
-                      text, flags=re.IGNORECASE)
-        # Casos tipo "5 menos cuarto"
-        text = re.sub(r'(\d{1,2})\s+menos\s+cuarto',
-                      lambda m: f'{(int(m.group(1)) - 1) % 24:02d}:45',
-                      text, flags=re.IGNORECASE)
-        return text
+    def reemplaza_otros_formatos(texto):
+        # 1. 'x y media de la tarde'
+        texto = re.sub(
+            r'(?<!\d)(\d{1,2})\s+y\s+media\s+de\s+la\s+(mañana|tarde|noche)',
+            lambda m: f"{int(m.group(1)) + (12 if m.group(2) in ['tarde', 'noche'] and int(m.group(1)) < 12 else 0):02d}:30",
+            texto
+        )
 
-    # Expresión regular principal
+        # 2. 'x menos cuarto'
+        texto = re.sub(
+            r'(?<!\d)(\d{1,2})\s+menos\s+cuarto',
+            lambda m: f"{(int(m.group(1)) - 1) % 24:02d}:45",
+            texto
+        )
+
+        # 3. 'x en punto'
+        texto = re.sub(
+            r'(?<!\d)(\d{1,2})\s+en\s+punto',
+            lambda m: f"{int(m.group(1)):02d}:00",
+            texto
+        )
+
+        # 4. '12 de la noche'
+        texto = re.sub(
+            r'12\s+de\s+la\s+noche',
+            '00:00',
+            texto
+        )
+
+        return texto
+
+    # Patrón principal para 'hh', 'hh:mm', 'hhhm', etc.
     patron = re.compile(
-        r'(?P<h>\d{1,2})\s*(h|:)?\s*(?P<m>\d{1,2})?\s*(m|min|en punto)?(?:\s+de\s+la\s+(?P<ampm>mañana|tarde|noche))?',
+        r'(?<!\d)(?P<h>\d{1,2})\s*(h|:)?\s*(?P<m>\d{1,2})?\s*(m|min)?(?:\s+de\s+la\s+(?P<ampm>mañana|tarde|noche))?',
         flags=re.IGNORECASE
     )
 
     with open(ficHoras, 'rt', encoding='utf-8') as f:
         lineas = f.readlines()
 
-        nuevas_lineas = []
-    for linia in lineas:
-        linia = reemplazos_especiales(linia)
-        nueva = patron.sub(normaliza, linia)
-        if not nueva.endswith('\n'):
-            nueva += '\n'
-        nuevas_lineas.append(nueva)
+    nuevas_lineas = []
+    for linea in lineas:
+        original = linea
+        linea = reemplaza_otros_formatos(linea)
+        linea = patron.sub(normaliza, linea)
+
+        if not linea.endswith('\n'):
+            linea += '\n'
+        nuevas_lineas.append(linea)
 
     with open(ficHoras, 'wt', encoding='utf-8') as f:
         f.writelines(nuevas_lineas)
